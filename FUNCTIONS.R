@@ -376,7 +376,7 @@ CONVERT <- function(dirFol){
   Serie.diaria=Data.all.files
   
   summary=list()
-  ###Debo corregir el ciclo, cuando no se puede obtener la conversion de un día 
+  ###Debo corregir el ciclo, cuando no se puede obtener la conversion de un d?a 
   ###porque no quedaron datos en el archivo horario falla el proceso
   #pb <- winProgressBar(title = "Progress bar", min = 0,max = length(Data.all.files), width = 300) 
   pb <-txtProgressBar(style = 3)
@@ -685,71 +685,71 @@ MIX<-function(dirFol){
 QCDAILY <- function(dirFol){
   
   print("Wait a moment please...")
-  ###Lectura de los archivos
+  ##Lectura de los archivos
 
   if(length(list.files(paste0(dirFol,"/SERIES_ORIGINAL/HOURLY/")))!=0){ #condicion para verificar si hay archivos horarios
-    ruta=paste0(dirFol,"/PROCESS/02_SERIES_DAILY_to_QC/") 
+    ruta=paste0(dirFol,"/PROCESS/02_SERIES_DAILY_to_QC/")
   }else{
-    ruta=paste0(dirFol,"/SERIES_ORIGINAL/DAILY/") 
+    ruta=paste0(dirFol,"/SERIES_ORIGINAL/DAILY/")
   }
-  
+
   Destino=paste0(dirFol,"/PROCESS/03_SERIES_DAILY_With_Holes/")
   files <- list.files(ruta, pattern="\\.txt$")
-  TypeOrig=(grep("DailyReady",files))#Aqui identifico si el archivo origen contiene info diaria desde 
+  TypeOrig=(grep("DailyReady",files))#Aqui identifico si el archivo origen contiene info diaria desde
   #la Fuente, o fue convertido desde info horaria a info diaria (DailyReady)
   #si TypeOrig es diferente de cero es porque hubo un proceso Horario previo
-  
+
   #Asignacion de nombres de archivos segun origen
   if(length(TypeOrig)>=1){
     nom.files=rep("",length(files))
     nom.files[TypeOrig]<-substring(files[TypeOrig],1,nchar(files[TypeOrig])-15)
     nom.files[-TypeOrig]<-substring(files[-TypeOrig],1,nchar(files[-TypeOrig])-4)
   }else{
-    nom.files=substring(files,1,nchar(files)-4)        
+    nom.files=substring(files,1,nchar(files)-4)
   }
-  
+
   Data.all.files=lapply(paste0(ruta,files),function(x){read.delim(x,sep="\t",header=F,col.names=c("Dates","Value"),skip = 1)})
-  
+
   names(Data.all.files)=nom.files
-  
+
   Data.all.filesNAFree=Data.all.files
   Serie.diaria=Data.all.files
-  
+
   # Reference table
   REF=read.csv("Val_REF_QCDaily.csv", header=T, row.names=1)
-  
+
   summary=vector("list", length(Data.all.files))
   filmin=paste0(YStart,"-01-01")
   filmax=paste0(YEnd,"-12-31")
   #si no hay datos que cumplan con los valores de REF falla el ciclo
-  
+
   for(i in 1:length(Data.all.files)){
-    
+
     ProbDUP=FALSE
     colnames(Data.all.files[[i]])=c("Date", "Value")
-    # Quit NA 
+    # Quit NA
     Data.all.filesNAFree[[i]]=Data.all.files[[i]][which(!is.na(Data.all.files[[i]]$Value)),]
-   
+
     #si no hay datos en el archivo original, esta condicion hace que el ciclo salte a la siguiente "i"
     if(dim(Data.all.filesNAFree[[i]])[1]==0){
       print(paste0("The station ",nom.files[i]," have null information, it cannot be included into the following process"))
       next
     }
-    
+
     # Read date
     if(length(grep("TRUE",i==TypeOrig))==1){
-      DateOK=as.Date(as.character(Data.all.filesNAFree[[i]]$Date), "%Y-%m-%d")  
+      DateOK=as.Date(as.character(Data.all.filesNAFree[[i]]$Date), "%Y-%m-%d")
     }else{DateOK=as.Date(as.character(Data.all.filesNAFree[[i]]$Date), "%Y%m%d")
           if(unique(is.na(DateOK))){
             DateOK=as.Date(as.character(Data.all.filesNAFree[[i]]$Date), "%Y-%m-%d")
               }
-          }   
-    
+          }
+
     Data.all.filesNAFree[[i]]$Date=DateOK
     #filter interest year
     Data.all.files.OK=Data.all.filesNAFree[[i]]$Date>=as.Date(filmin) &Data.all.filesNAFree[[i]]$Date<=as.Date(filmax)
     Data.all.filesNAFree[[i]]=Data.all.filesNAFree[[i]][Data.all.files.OK,]
-    
+
     #Filtro para descartar estaciones con muy pocos datos
     if(dim(Data.all.filesNAFree[[i]])[1]<30){   #30 es un valor arbitrario para rechazar una estacion con menos de ese numero de dias de info
 
@@ -769,15 +769,15 @@ QCDAILY <- function(dirFol){
         write.csv(DUPcsv, paste0(Destino,"/",nom.files[i], "_Duplicated.csv"))
       }
     }
-    
+
     # Detectar variable
     VAR=substring(nom.files[i],nchar(nom.files[i])-3, nchar(nom.files[i]))
-    VAR=substring(nom.files[i],nchar(nom.files[i])-3, nchar(nom.files[i]))  
+    VAR=substring(nom.files[i],nchar(nom.files[i])-3, nchar(nom.files[i]))
     VAR=toupper(VAR)
-    
+
     # Convertir energia solar en CCM2
     if(VAR=="ESOL"){
-      
+
       UNIT=substring(nom.files[i],nchar(nom.files[i])-8, nchar(nom.files[i])-5)
       UNIT=toupper(UNIT)
       if(UNIT=="WAM2"){
@@ -789,9 +789,9 @@ QCDAILY <- function(dirFol){
         SerieOPccm2=Data.all.filesNAFree[[i]]$Value*100/4.18
         Data.all.filesNAFree[[i]]$Value=SerieOPccm2
         #Data.all.filesNAFree[[i]]$Value[which((Data.all.filesNAFree[[i]]$Value>190)==FALSE)]=NA
-        
+
       }
-      
+
       ###En caso de ESOL, la unidad se convierte de la unidad original hasta CCM2. Aqui se cambia el nombre del archivo final
       ID=substring(nom.files[i],1,nchar(nom.files[i])-10)
       nom=paste0(ID,"_CCM2_",VAR)
@@ -801,37 +801,39 @@ QCDAILY <- function(dirFol){
     }
     # Convertir brillo solar en CCM2
     if(VAR=="SBRI"){
-      
+
       Latitudes=read.table(paste0(dirFol,"/Est_Lat.csv"),dec = ".",header = T,sep=",")
-      
+
       days=as.Date(unlist(Data.all.filesNAFree[[i]][1]))
       sunshine=Data.all.filesNAFree[[i]][2]
       ID=substring(nom.files[i],1,nchar(nom.files[i])-5)
       lat=Latitudes[which(Latitudes$ID==ID),2]#Busca dentro del archivo, la latitud
-      A=0.25;B=0.50 #constantes
       
+      print( ID)
+      A=0.25;B=0.50 #constantes
+
       Rs=ap(days=days, lat=lat, extraT=NULL, A=A, B=B, SSD=sunshine)*(100/4.18)
       ###SIRAD convierte a MJ, por lo que el factor de correccion (100/4.18) es para llevarlo a CCM2
-      
+
       Data.all.filesNAFree[[i]]$Value=Rs
       VAR="ESOL";UNIT="CCM2"
       nom=paste0(ID,"_CCM2_ESOL")
       nom.files[i]=nom
     }
-    
+
     #################################
     #Limpiando temperaturas de cambios bruscos en su media
     if(VAR=="TMAX"|VAR=="TMIN"){
-      
+
       x=Data.all.filesNAFree[[i]]$Value
-      #Estas líneas son para identificar variaciones de 5 grados en temp respecto
+      #Estas l?neas son para identificar variaciones de 5 grados en temp respecto
       #a la media movil de los n valores anteriores
       n=8;y=0;pos=0
-      
-      #El valor n=8 es arbitrario, pero se considera apropiado para evitar tener un promedio 
-      #muy suavizado y suficiente como para tener un referente "histórico" local
+
+      #El valor n=8 es arbitrario, pero se considera apropiado para evitar tener un promedio
+      #muy suavizado y suficiente como para tener un referente "hist?rico" local
       for(j in 1:(length(x)-(n-1))){
-        
+
         y[j]=mean(x[j:(j+n-1)],na.rm = T)
         #con esta condicion comparo el promedio movil con el valor de la serie y lo descarto del siguiente promedio
         #evitando asi que lo infle.
@@ -843,9 +845,9 @@ QCDAILY <- function(dirFol){
       pos=as.vector(na.omit(pos[-1]))
       #Con este pos y el vector de datos originales puedo guardar los datos anomalos si deseo
       Data.all.filesNAFree[[i]]$Value=x
-      
+
     }
-    
+
     #library(changepoint)
     # NA is not allowed in the data as changepoint methods are only sensible for regularly spaced data.
     # m.data=x
@@ -853,7 +855,7 @@ QCDAILY <- function(dirFol){
     # m.pelt2=cpt.meanvar(m.data,method='PELT',penalty = "MBIC")
     # p1=plot(m.pelt,type='l',cpt.col='blue',xlab='date',cpt.width=3)
     # cpts(m.pelt)
-    
+
     #library(tsoutliers)
     #tso() el proceso iterativo es demasiado demorado por serie cuando esta tiene muchos datos
     # replaceOutliers <- function(series) {
@@ -861,7 +863,7 @@ QCDAILY <- function(dirFol){
     #     series <- tso(ts(x))
     # }
     # replaceOutliers(x)
-    
+
     # Detecar valores fuera de rango
     Vmax=REF[,VAR][1];Vmin=REF[,VAR][2]
 
@@ -870,8 +872,8 @@ QCDAILY <- function(dirFol){
     if(dim(Bonnes1)[1]>0){
     Data.all.filesNAFree[[i]][Error,]$Value=NA
     }
-    
-    #De nuevo se filtra si hay muy pocos datos, segun los valores fuera de rango descartados 
+
+    #De nuevo se filtra si hay muy pocos datos, segun los valores fuera de rango descartados
     if(sum(!is.na(Data.all.filesNAFree[[i]]$Value))<=30){
       print(paste0("The station ",nom.files[i],", do not have data for the period of interest."))
       next
@@ -885,224 +887,224 @@ QCDAILY <- function(dirFol){
     }else{
       Dev=sd(na.omit(unlist(Data.all.filesNAFree[[i]]$Value)))
       PROMEDIO=mean(na.omit(unlist(Data.all.filesNAFree[[i]]$Value)))
-    }  
-    
+    }
+
     Data.all.filesNAFree[[i]]$Out4Desv=NA
-    
+
     #Colocando indicador de valores atipicos (4 o 3 desv)
     if(VAR=="RAIN"){
       LU=PROMEDIO+4*Dev;LI=PROMEDIO-4*Dev
     Data.all.filesNAFree[[i]]$Out4Desv[(Data.all.filesNAFree[[i]]$Value)>(LU)|(Data.all.filesNAFree[[i]]$Value)<(LI)]= c("Out4SD")
                     }else{
-      LU=PROMEDIO+3*Dev;LI=PROMEDIO-3*Dev                                                                                                
+      LU=PROMEDIO+3*Dev;LI=PROMEDIO-3*Dev
     Data.all.filesNAFree[[i]]$Out4Desv[(Data.all.filesNAFree[[i]]$Value)>(LU)|(Data.all.filesNAFree[[i]]$Value)<(LI)]= c("Out3SD")
                           }
-    
+
     # Deteccion rango de fechas
     Date.min=min(Data.all.filesNAFree[[i]]$Date);Date.max=max(Data.all.filesNAFree[[i]]$Date)
-    
+
     # Construir serie resultante
     SEQ=as.data.frame(seq(Date.min,Date.max,1))
     colnames(SEQ)=c("Date")
-    
+
     POSpot=match(SEQ$Date, Data.all.filesNAFree[[i]]$Date)#coincidencia entre fechas creadas y secuencia original procesada
-    
+
     POSlimpio=POSpot[!is.na(POSpot)]#Quitando NA's del vector anterior
     Bonnes3=Data.all.filesNAFree[[i]][POSlimpio,]#datos que hay realmente
     POS=match(Bonnes3$Date,SEQ$Date)#Vector sin NA's indicando la posicion en la q hay datos. Equivalente a usar which
     POS2=as.vector(as.numeric(POS))
-    
+
     SEQ$Value=NA
     SEQ$Out4Desv=NA
     SEQ$Value[POS2]=unlist(Bonnes3$Value)
     SEQ$Out4Desv[POS2]=unlist(Bonnes3$Out4Desv)
     Serie.diaria[[i]]=SEQ
-      
+
     # Generar reporte
     size=dim(Serie.diaria[[i]])[1]
     Good=dim(Bonnes3)[1]
     Duplicados=length(DUP[DUP==TRUE])
     Error=dim(Bonnes1)[1]
-    NAentrada=length(which(is.na(SEQ$Value)))  
+    NAentrada=length(which(is.na(SEQ$Value)))
     POSdecal=POS[-1]
     POSlimpio.small=POS[1:length(POSdecal)]
     MAYORsalto=max(POSdecal-POSlimpio.small)
     Fuera4DEV=sum(!is.na(Bonnes3$Out4Desv))
-    
+
     resul=c(size, Duplicados, round((Duplicados/size)*100,2), Error, round((Error/size)*100,2), Fuera4DEV, NAentrada, round((NAentrada/size)*100,2), ProbDUP, MAYORsalto)
     Tabla.fin=as.data.frame(resul,row.names=c("Datos", "Duplicated", "% duplicated", "Errors", "% errors", "Values out 4 DEV","NA's", "% NA's", "Date duplicated Different values", "Greater Gap"))
     summary[[i]]=Tabla.fin
     write.table(Serie.diaria[[i]],paste0(Destino,nom.files[i], "_ReadyFillGaps.txt"), sep="\t", row.names=FALSE)
- 
+
     if(VAR!="RAIN"){
       #qplot(Serie.diaria[[i]]$Date,Serie.diaria[[i]]$Value, ylab="Value", xlab="Date")+
         ggplot(Serie.diaria[[i]],aes(Date,Value))+ylab("Value")+xlab("Date")+
         geom_line()+geom_hline(yintercept = c(LI,LU), colour="red",linetype=2)+
         geom_hline(yintercept = c(Vmax,Vmin), colour="blue",linetype=2)+
-        annotate("text",x=max(Serie.diaria[[i]]$Date), y=c(LU+1),label="Outlier",colour="red")+ 
+        annotate("text",x=max(Serie.diaria[[i]]$Date), y=c(LU+1),label="Outlier",colour="red")+
         annotate("text",x=min(Serie.diaria[[i]]$Date), y=c(Vmax+1),label="Ref. Value",colour="blue")+
         scale_x_date(date_labels = "%b %y")+
         theme_bw()
       }else{
-          
+
          # qplot(Serie.diaria[[i]]$Date,Serie.diaria[[i]]$Value, ylab="Value", xlab="Date")+
           ggplot(Serie.diaria[[i]],aes(Date,Value))+ylab("Value")+xlab("Date")+
             geom_line()+geom_hline(yintercept = c(LU), colour="red",linetype=2)+
             geom_hline(yintercept = c(Vmax), colour="blue",linetype=2)+
-            annotate("text",x=max(Serie.diaria[[i]]$Date), y=c(LU+1),label="Outlier",colour="red")+ 
+            annotate("text",x=max(Serie.diaria[[i]]$Date), y=c(LU+1),label="Outlier",colour="red")+
             annotate("text",x=min(Serie.diaria[[i]]$Date), y=c(Vmax+1),label="Ref. Value",colour="blue")+
             scale_x_date(date_labels = "%b %y")+
             theme_bw()
         }
-    ggsave(paste0(Destino,nom.files[i], "_Plotserie.png"), width=25, height=15,units = "cm")
+     ggsave(paste0(Destino,nom.files[i], "_Plotserie.png"), width=25, height=15,units = "cm")
   }
 
-  #Identificando elementos NULL de la lista
-  #Se dan cuando la serie no tiene informacion en el periodo de interes
-  SinDato=which(unlist(lapply(summary, is.null))==TRUE)
-  
-  if(length(SinDato)>0){
-  #Aqui se extraen los NULL
-  summary=Filter((Negate(is.null)), summary)
-  summary2=(as.data.frame(do.call(cbind,summary)))
-  
-  #print(paste0("The station: ",nom.files[SinDato],", do not have data for the period of interest."))
-  colnames(summary2)=nom.files[-SinDato]; summary2=t(summary2)
-  
-  #Si en este paso se descartan series de TMAX o TMIN, deberan ser descartadas tambien del
-  #Procedimiento siguiente que implica una comparacion entre dichas variables, de lo contrario el proceso falla
-  #Discard tendra entonces los ID  que se deben quitar
-  
-  }else{
-    summary2=(as.data.frame(do.call(cbind,summary)))
-    colnames(summary2)=nom.files; summary2=t(summary2)
-  }
-  
-  write.csv(summary2,paste0(Destino,"TotalSummary.csv"))
+  # #Identificando elementos NULL de la lista
+  # #Se dan cuando la serie no tiene informacion en el periodo de interes
+  # SinDato=which(unlist(lapply(summary, is.null))==TRUE)
+  # 
+  # if(length(SinDato)>0){
+  # #Aqui se extraen los NULL
+  # summary=Filter((Negate(is.null)), summary)
+  # summary2=(as.data.frame(do.call(cbind,summary)))
+  # 
+  # #print(paste0("The station: ",nom.files[SinDato],", do not have data for the period of interest."))
+  # colnames(summary2)=nom.files[-SinDato]; summary2=t(summary2)
+  # 
+  # #Si en este paso se descartan series de TMAX o TMIN, deberan ser descartadas tambien del
+  # #Procedimiento siguiente que implica una comparacion entre dichas variables, de lo contrario el proceso falla
+  # #Discard tendra entonces los ID  que se deben quitar
+  # 
+  # }else{
+  #   summary2=(as.data.frame(do.call(cbind,summary)))
+  #   colnames(summary2)=nom.files; summary2=t(summary2)
+  # }
+  # 
+  # write.csv(summary2,paste0(Destino,"TotalSummary.csv"))
+  # 
+  # ######################################################################################################
+  # ## QC para informacion a nivel diario, hallan o no pasado por proceso de conversion a escala diaria.##
+  # ## Estaciones con informacion desagregada o un archivo por variable                                 ##
+  # ## TMAX>TMIN                                                                                        ##
+  # ######################################################################################################
+  # rutOrigen=Destino;destino=paste0(rutOrigen)
+  # 
+  # files <- list.files(rutOrigen, pattern="\\.txt$")
+  # nom.files<-substring(files,1,nchar(files)-4)#
+  # fil=files[grep("ReadyFillGaps",nom.files)]#
+  # files=fil[grep("TMAX|TMIN",fil)]#
+  # nom.files<-substring(files,1,nchar(files)-18)
+  # 
+  # #La comparacion se debe realizar en parejas. Una misma estacion con ambas variables
+  # IDs=substring(nom.files,1,nchar(nom.files)-5)
+  # tab=table(IDs);SinPar=names(tab[tab==1])
+  # 
+  # if(exists("Discard")){
+  #   Discard=unique(c(SinPar,Discard))}else{Discard=unique(c(SinPar))}
+  # #Si hubo series descartadas en el paso anterior que involucraran a TMAX o TMIN
+  # #Se descartan de la comparacion
+  # if(exists("Discard")){
+  # 
+  #     if(length(Discard)==1){
+  #     DiscarD=grep(Discard,files)
+  #     files=files[-(DiscarD)]
+  #     }else if(length(Discard)>1){
+  #         grep2 <- function(pattern, x){grep(pattern, x)}
+  #         grep2 <- Vectorize(FUN=grep2, vectorize.args='pattern')
+  # 
+  #         DiscarD=grep2(Discard,files)
+  # 
+  #         A2=Filter(function(x){length(x)>0},DiscarD)
+  #         A3=((unlist(A2)))
+  #         if(length(A3)!=0){
+  #         files=files[-(A3)]}
+  #       }
+  #   }
+  # 
+  # nom.files<-substring(files,1,nchar(files)-18)
+  # Datos <- lapply(paste(rutOrigen,"/",files,sep=""),function(x){read.table(x,header=T,sep="\t")})
+  # names(Datos)=nom.files
+  # 
+  # for(i in 1:length(Datos)){
+  #   #si esta condicion se cumple quiere decir que la fecha original viene con separadores
+  #   if(class(Datos[[i]][,1])=="factor"){
+  #     Datos[[i]][,1]=as.Date(Datos[[i]][,1])#,format="%d/%m/%Y")
+  #   }
+  # }
 
-  ######################################################################################################
-  ## QC para informacion a nivel diario, hallan o no pasado por proceso de conversion a escala diaria.##
-  ## Estaciones con informacion desagregada o un archivo por variable                                 ##
-  ## TMAX>TMIN                                                                                        ##
-  ######################################################################################################
-  rutOrigen=Destino;destino=paste0(rutOrigen)
-  
-  files <- list.files(rutOrigen, pattern="\\.txt$")
-  nom.files<-substring(files,1,nchar(files)-4)#
-  fil=files[grep("ReadyFillGaps",nom.files)]#
-  files=fil[grep("TMAX|TMIN",fil)]#
-  nom.files<-substring(files,1,nchar(files)-18)
-  
-  #La comparacion se debe realizar en parejas. Una misma estacion con ambas variables
-  IDs=substring(nom.files,1,nchar(nom.files)-5)
-  tab=table(IDs);SinPar=names(tab[tab==1])
-  
-  if(exists("Discard")){
-    Discard=unique(c(SinPar,Discard))}else{Discard=unique(c(SinPar))}
-  #Si hubo series descartadas en el paso anterior que involucraran a TMAX o TMIN
-  #Se descartan de la comparacion
-  if(exists("Discard")){
-    
-      if(length(Discard)==1){
-      DiscarD=grep(Discard,files)
-      files=files[-(DiscarD)]
-      }else if(length(Discard)>1){
-          grep2 <- function(pattern, x){grep(pattern, x)}
-          grep2 <- Vectorize(FUN=grep2, vectorize.args='pattern')
-          
-          DiscarD=grep2(Discard,files)
-          
-          A2=Filter(function(x){length(x)>0},DiscarD)
-          A3=((unlist(A2)))
-          if(length(A3)!=0){
-          files=files[-(A3)]}
-        }
-    }
-
-  nom.files<-substring(files,1,nchar(files)-18)
-  Datos <- lapply(paste(rutOrigen,"/",files,sep=""),function(x){read.table(x,header=T,sep="\t")})
-  names(Datos)=nom.files
-  
-  for(i in 1:length(Datos)){
-    #si esta condicion se cumple quiere decir que la fecha original viene con separadores
-    if(class(Datos[[i]][,1])=="factor"){
-      Datos[[i]][,1]=as.Date(Datos[[i]][,1])#,format="%d/%m/%Y")
-    }
-  }
-  
-  #Cuales de las estaciones contienen info sobre Tmax y Tmin
-  TempMax=Datos[grep("TMAX",nom.files)]
-  TempMin=Datos[grep("TMIN",nom.files)]
-  #ID's de las estaciones de cada variable
-  IDtmax=substring(names(TempMax),1,nchar(names(TempMax))-5)
-  IDtmin=substring(names(TempMin),1,nchar(names(TempMin))-5)
-  vec=(IDtmax==IDtmin)
-  vec1=length(vec[vec==FALSE])
-  
-  #Para hacer la comparacion correctamente de todas las estaciones debe haber igual cantidad
-  #de estaciones, y que sean efectivamente las mismas estaciones entre Tmax y Tmin
-  if(length(TempMax)==length(TempMin) &  vec1==0){
-    print("The comparation between TMAX and TMIN is possible")
-  }else{print("Error, the comparation between TMAX and TMIN is not possible")}
-  
-  cant.error=0
-  percent=0
-  for(i in 1:max(length(TempMax),length(TempMin))){
-
-    #Posicion que ocupa la estacion de Tmax entre las estaciones de Tmin  
-    pos=grep(IDtmax[i],names(TempMin))
-    pos=pos[which.min(nchar(names(TempMin)[pos]))]###Esta condicion surge porque al tener dos estaciones 
-    #con el mismo nombre, pero diferente fuente, se estaba generando un error (Estacion IDEAM y NP)
-    #Fecha minima y maxima entre las dos bases de datos
-    
-    Datemin=min(min(TempMax[[i]][,1]),min(TempMin[[pos]][,1]))
-    Datemax=max(max(TempMax[[i]][,1]),max(TempMin[[pos]][,1]))
-    Dates=seq(Datemin,Datemax,1)
-    
-    newTmax=0
-    for(j in 1:length(Dates)) {
-      datasub=TempMax[[i]][TempMax[[i]][,1]==Dates[j],]
-      if(dim(datasub)[1]!=0){    
-        newTmax[j]=TempMax[[i]][TempMax[[i]][,1]==Dates[j],2]
-      }else{
-        newTmax[j]=NA
-      }
-    }
-    
-    newTmin=0
-    for(j in 1:length(Dates)) {
-      data_sub=TempMin[[pos]][TempMin[[pos]][,1]==Dates[j],]
-      if(dim(data_sub)[1]!=0){    
-        newTmin[j]=TempMin[[i]][TempMin[[pos]][,1]==Dates[j], 2]
-      }else{
-        newTmin[j]=NA
-      }
-    }
-    
-    Station.Unit=data.frame(Dates,newTmax,newTmin)
-    colnames(Station.Unit)=c("Date","TMAX","TMIN")
-    
-    Station.Unit.Error=which(Station.Unit$newTmax<=Station.Unit$newTmin)
-    originalTMAX=paste0(substring(nom.files[i],1,nchar(nom.files[i])-4),"TMAX")
-    originalTMIN=paste0(substring(nom.files[i],1,nchar(nom.files[i])-4),"TMIN")
-    
-    #Reemplazando los valores de las inconsistencias en las fechas de las estaciones involucradas
-    if(length(Station.Unit.Error)>0){
-      
-      Datos[[originalTMAX]][Station.Unit.Error,2]=NA
-      Datos[[originalTMIN]][Station.Unit.Error,2]=NA
-      ##Reescribiendo con las correcciones
-      write.table(Datos[[originalTMAX]],paste0(destino,originalTMAX,".txt"),sep="\t",row.names=F)
-      write.table(Datos[[originalTMIN]],paste0(destino,originalTMIN,".txt"),sep="\t",row.names=F)
-    }
-    cant.error[i]=length(Station.Unit.Error)
-    percent[i]=round((cant.error[i]/dim(Station.Unit)[1])*100,3)
-  }
-  cant.err=paste(percent,"%");cant.errorf=data.frame(IDtmax,cant.error,cant.err)
-  colnames(cant.errorf)=c("ID","ERROR","% ERROR")
-  write.csv(cant.errorf,paste0(destino,"Coherence,TMAX_TMIN.csv"),row.names=F)
-  print("Quality Control Finalized")
-  print("Check 03_SERIES_DAILY_With_Holes folder")
+  # #Cuales de las estaciones contienen info sobre Tmax y Tmin
+  # TempMax=Datos[grep("TMAX",nom.files)]
+  # TempMin=Datos[grep("TMIN",nom.files)]
+  # #ID's de las estaciones de cada variable
+  # IDtmax=substring(names(TempMax),1,nchar(names(TempMax))-5)
+  # IDtmin=substring(names(TempMin),1,nchar(names(TempMin))-5)
+  # vec=(IDtmax==IDtmin)
+  # vec1=length(vec[vec==FALSE])
+  # 
+  # #Para hacer la comparacion correctamente de todas las estaciones debe haber igual cantidad
+  # #de estaciones, y que sean efectivamente las mismas estaciones entre Tmax y Tmin
+  # if(length(TempMax)==length(TempMin) &  vec1==0){
+  #   print("The comparation between TMAX and TMIN is possible")
+  # }else{print("Error, the comparation between TMAX and TMIN is not possible")}
+  # 
+  # cant.error=0
+  # percent=0
+  # for(i in 1:max(length(TempMax),length(TempMin))){
+  # 
+  #   #Posicion que ocupa la estacion de Tmax entre las estaciones de Tmin
+  #   pos=grep(IDtmax[i],names(TempMin))
+  #   pos=pos[which.min(nchar(names(TempMin)[pos]))]###Esta condicion surge porque al tener dos estaciones
+  #   #con el mismo nombre, pero diferente fuente, se estaba generando un error (Estacion IDEAM y NP)
+  #   #Fecha minima y maxima entre las dos bases de datos
+  # 
+  #   Datemin=min(min(TempMax[[i]][,1]),min(TempMin[[pos]][,1]))
+  #   Datemax=max(max(TempMax[[i]][,1]),max(TempMin[[pos]][,1]))
+  #   Dates=seq(Datemin,Datemax,1)
+  # 
+  #   newTmax=0
+  #   for(j in 1:length(Dates)) {
+  #     datasub=TempMax[[i]][TempMax[[i]][,1]==Dates[j],]
+  #     if(dim(datasub)[1]!=0){
+  #       newTmax[j]=TempMax[[i]][TempMax[[i]][,1]==Dates[j],2]
+  #     }else{
+  #       newTmax[j]=NA
+  #     }
+  #   }
+  # 
+  #   newTmin=0
+  #   for(j in 1:length(Dates)) {
+  #     data_sub=TempMin[[pos]][TempMin[[pos]][,1]==Dates[j],]
+  #     if(dim(data_sub)[1]!=0){
+  #       newTmin[j]=TempMin[[i]][TempMin[[pos]][,1]==Dates[j], 2]
+  #     }else{
+  #       newTmin[j]=NA
+  #     }
+  #   }
+  # 
+  #   Station.Unit=data.frame(Dates,newTmax,newTmin)
+  #   colnames(Station.Unit)=c("Date","TMAX","TMIN")
+  # 
+  #   Station.Unit.Error=which(Station.Unit$newTmax<=Station.Unit$newTmin)
+  #   originalTMAX=paste0(substring(nom.files[i],1,nchar(nom.files[i])-4),"TMAX")
+  #   originalTMIN=paste0(substring(nom.files[i],1,nchar(nom.files[i])-4),"TMIN")
+  # 
+  #   #Reemplazando los valores de las inconsistencias en las fechas de las estaciones involucradas
+  #   if(length(Station.Unit.Error)>0){
+  # 
+  #     Datos[[originalTMAX]][Station.Unit.Error,2]=NA
+  #     Datos[[originalTMIN]][Station.Unit.Error,2]=NA
+  #     ##Reescribiendo con las correcciones
+  #     write.table(Datos[[originalTMAX]],paste0(destino,originalTMAX,".txt"),sep="\t",row.names=F)
+  #     write.table(Datos[[originalTMIN]],paste0(destino,originalTMIN,".txt"),sep="\t",row.names=F)
+  #   }
+  #   cant.error[i]=length(Station.Unit.Error)
+  #   percent[i]=round((cant.error[i]/dim(Station.Unit)[1])*100,3)
+  # }
+  # cant.err=paste(percent,"%");cant.errorf=data.frame(IDtmax,cant.error,cant.err)
+  # colnames(cant.errorf)=c("ID","ERROR","% ERROR")
+  # write.csv(cant.errorf,paste0(destino,"Coherence,TMAX_TMIN.csv"),row.names=F)
+  # print("Quality Control Finalized")
+  # print("Check 03_SERIES_DAILY_With_Holes folder")
 }
 
 #Inputs for generate data
@@ -1421,7 +1423,7 @@ SUMStatxSeason<-function(dirFol,YStart,YEnd,mStart,mEnd){
   datoS=na.omit(datoS)
   etapas=c(as.Date(paste0((vecYears),"-",monthStart,"-",01)),as.Date(paste0((vecYears),"-",(monthEnd),"-",28)))
   
-  datoS$type = factor(cumsum(c(0, as.numeric(diff(datoS$fecha) - 1))))#para que la línea quede discontinua
+  datoS$type = factor(cumsum(c(0, as.numeric(diff(datoS$fecha) - 1))))#para que la l?nea quede discontinua
   plot1=ggplot(data=datoS,aes(x=fecha, y=n, colour=Var)) + geom_point(show.legend = FALSE,size=1.25,aes(group=type)) + 
     labs(title = paste0("Available Data x Season \n",texto," ",EstxVar[i]),y='Variable',x='Date')+
     geom_vline(xintercept=(as.numeric(as.Date(etapas))),linetype=4, colour="black")
@@ -1465,13 +1467,13 @@ PLOTSERIES<-function(dirFol,vari){
       #m1a$print()
   #m1a$save(paste0(rutOrigen,variable,'.html'), standalone = TRUE)
 
-  #Grafico util con pocas estaciones y generable rápidamente
+  #Grafico util con pocas estaciones y generable r?pidamente
   
   #ggplot(datos,aes(Date,n))+geom_line(aes(colour = as.factor(Station)))
   
   #head(datos)
   
-  #Gráfico util especialmente con gran cantidad de estaciones pero muy lento de generar
+  #Gr?fico util especialmente con gran cantidad de estaciones pero muy lento de generar
    Plot <- nPlot(n ~ Date, data = datos,group = "Station",type = "lineChart")
    Plot$xAxis(tickFormat =   "#!function(d) {return d3.time.format('%Y-%m-%d')(new Date(d*1000*3600*24));}
                  !#",rotateLabels = -90,   axisLabel = "Date")
